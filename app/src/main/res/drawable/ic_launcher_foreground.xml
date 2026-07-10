@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  <!-- Barres vertes (signaux) -->
+  <path android:fillColor="#3fb950"
+        android:pathData="M24,38 h60 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-60 a4,4 0 0 1 -4,-4 v-8 a4,4 0 0 1 4,-4z"/>
+  <path android:fillColor="#1f6feb"
+        android:pathData="M24,58 h44 a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h-44 a4,4 0 0 1 -4,-4 v-8 a4,4 0 0 1 4,-4z"/>
+  <!-- Cercle P -->
+  <circle android:fillColor="#238636" android:cx="80" cy="74" r="14"/>
+  <path android:fillColor="#ffffff"
+        android:pathData="M75,68 h7 a4,4 0 0 1 0,8 h-7z M75,68 v12"/>
+</vector>

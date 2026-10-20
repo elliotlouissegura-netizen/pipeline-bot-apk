@@ -1,6 +1,6 @@
 # Fonds personnel autonome — Spécification de l'orchestrateur
 
-Statut : **brouillon à valider** · Version 0.1 · 2026-10-20
+Statut : **brouillon à valider** · Version 0.2 · 2026-10-20
 
 ## 1. Objectif
 
@@ -9,7 +9,7 @@ Un fonds personnel qui s'exécute seul sur un compte IBKR :
 - l'utilisateur fait un virement mensuel (montant variable, avec un plancher) ;
 - l'orchestrateur investit, rééquilibre, applique les règles de tendance et envoie un rapport ;
 - objectif de long terme : environ 8 à 9 %/an au centre, 10 %+ dans un scénario favorable. Ce n'est pas une garantie ;
-- perte temporaire maximale acceptée : -35 à -45 %.
+- perte temporaire maximale possible : -45 à -60 %, à cause des 40 % de choix personnels concentrés.
 
 Contraintes de l'utilisateur :
 
@@ -21,15 +21,26 @@ Contraintes de l'utilisateur :
 
 ## 2. Univers et allocation cible
 
-| Poche | Cible | Instrument (à confirmer selon la dispo IBKR) | Règle |
-|---|---|---|---|
-| Actions monde | 75 % | VWCE (Vanguard FTSE All-World Acc, Xetra, EUR) | Toujours investi |
-| Crypto : BTC | 10,5 % | ETP Bitcoin physique coté en Europe, ou crypto IBKR si la permission existe | Tendance hebdo |
-| Crypto : ETH | 4,5 % | ETP Ether physique coté en Europe, ou crypto IBKR | Tendance hebdo |
-| Matières premières | 10 % | IGLN (or), SSLN (argent), CMOD (panier Bloomberg Commodity) | Tendance mensuelle, pondération par volatilité inverse |
-| Parking | reste | XEON (monétaire €STR) | Reçoit les poches dont le signal est éteint |
+Répartition : 60 % de cœur diversifié, 40 % de choix personnels (20 % crypto, 20 % actions).
 
-Tous les tickers sont des paramètres de `config.yaml`. Aucun n'est codé en dur.
+| Poche | Ligne | Cible | Instrument (à confirmer selon la dispo IBKR) | Signal |
+|---|---|---|---|---|
+| Cœur | Actions monde | 55 % | VWCE (Vanguard FTSE All-World Acc, Xetra, EUR) | Aucun |
+| Cœur | Matières premières | 5 % | IGLN (or), SSLN (argent), CMOD (panier Bloomberg Commodity) | Mensuel |
+| Choix crypto | Ether | 5 % | ETP Ether physique (Europe) | Hebdo |
+| Choix crypto | Solana | 5 % | ETP Solana physique (Europe) | Hebdo |
+| Choix crypto | Hyperliquid | 5 % | 21Shares Hyperliquid ETP (CH1471826029, SIX, frais 2,5 %/an) ou HYPE en direct sur un exchange | Hebdo |
+| Choix crypto | 4e ligne | 5 % | **À confirmer** : proposition = 5 % de plus sur ETH (donc ETH à 10 %), alternative = LINK | Hebdo |
+| Choix actions | Strategy (proxy Bitcoin à effet de levier) | 5 % | MSTR (Nasdaq, USD) | Hebdo, comme une crypto |
+| Choix actions | Xiaomi | 5 % | 1810 (HKEX, lots de 200 actions), ou ADR XIACY si disponible | Mensuel |
+| Choix actions | Écosystème Musk | 5 % | TSLA 2,5 % et SPCX (SpaceX) 2,5 % | Mensuel |
+| Choix actions | 4e ligne | 5 % | **À confirmer** : proposition = TSM (TSMC, ADR) | Mensuel |
+| Parking | — | reste | XEON (monétaire €STR) | — |
+
+- Tous les tickers et poids sont des paramètres de `config.yaml`. Aucun n'est codé en dur.
+- **Plafond des choix personnels :** 40 % du portefeuille au total, et 8 % maximum par ligne avant rééquilibrage forcé.
+- **Changer une ligne choisie :** le changement est pris en compte au passage mensuel suivant, jamais immédiatement.
+- **Choix crypto éligibles :** top 50 par capitalisation, et un instrument liquide (ETP ou exchange) est disponible.
 
 ## 3. Signaux de tendance
 
@@ -37,28 +48,34 @@ On vend parce que la hausse s'arrête, jamais parce qu'elle « a assez monté »
 
 | Actif | Fréquence d'évaluation | Signal ON | Signal OFF |
 |---|---|---|---|
-| BTC, ETH | Hebdomadaire (clôture du vendredi) | Clôture > SMA 20 semaines × (1 + b) | Clôture < SMA 20 semaines × (1 − b) |
-| Or, argent, panier | Mensuelle (dernière clôture du mois) | Clôture > SMA 10 mois × (1 + b) | Clôture < SMA 10 mois × (1 − b) |
+| Cryptos et MSTR | Hebdomadaire (clôture du vendredi) | Clôture > SMA 20 semaines × (1 + b) | Clôture < SMA 20 semaines × (1 − b) |
+| Actions choisies (sauf MSTR) | Mensuelle (dernière clôture du mois) | Clôture > SMA 10 mois × (1 + b) | Clôture < SMA 10 mois × (1 − b) |
+| Or, argent, panier | Mensuelle | Clôture > SMA 10 mois × (1 + b) | Clôture < SMA 10 mois × (1 − b) |
 
 - `b` est une marge d'hystérésis, à 1 % par défaut. Entre les deux seuils, le signal garde son état précédent, ce qui évite les allers-retours inutiles.
-- Les prix utilisés sont ceux de l'instrument lui-même, téléchargés depuis IBKR. Si l'historique de l'instrument est trop court, on utilise l'actif sous-jacent.
+- Les prix utilisés sont ceux de l'instrument lui-même, téléchargés depuis IBKR. Si l'historique est trop court, on utilise l'actif sous-jacent (par exemple le token pour un ETP récent). Pour une action introduite récemment en bourse (SPCX), le signal s'applique dès qu'il y a 10 mois d'historique ; avant, la ligne est détenue sans signal.
 - VWCE n'a **aucun** signal : on ne fait pas de market timing sur le cœur du portefeuille.
 
-## 4. Poids à l'intérieur des poches
+## 4. Poids et destination quand un signal est OFF
 
-- **Crypto :** BTC et ETH reçoivent leur poids cible quand leur signal est ON. Quand il est OFF, ce poids va dans XEON.
-- **Matières premières :** chaque actif ON reçoit un poids proportionnel à `1 / volatilité`, la volatilité étant calculée sur 63 jours de rendements quotidiens. La somme est ramenée à 10 % et chaque actif est plafonné à 5 %. Le poids d'un actif OFF va dans XEON.
-  - On ne redistribue pas le poids d'un actif OFF vers les autres matières premières. La poche ne doit pas se concentrer sur un seul actif.
+- **Crypto :** chaque ligne ON reçoit son poids cible. Une ligne OFF part en XEON.
+- **Actions choisies :** chaque ligne ON reçoit son poids cible. Une ligne OFF part en **VWCE**, jusqu'au retour de la tendance ou au remplacement de la ligne.
+- **MSTR :** traité comme une crypto. OFF → XEON.
+- **Matières premières :** chaque actif ON reçoit un poids proportionnel à `1 / volatilité`, la volatilité étant calculée sur 63 jours de rendements quotidiens. La somme est ramenée à 5 % et chaque actif est plafonné à 2,5 %. Un actif OFF part en XEON.
+  - On ne redistribue pas le poids d'une ligne OFF vers les autres lignes de sa poche. Une poche ne doit pas se concentrer sur un seul actif.
+- **Actions en lots (Xiaomi sur HKEX) :** on n'achète un lot que si le retard sur la cible vaut au moins un lot entier. Tant que le portefeuille est petit, la ligne peut rester sous sa cible ; le cash correspondant attend en XEON.
 
 ## 5. Rééquilibrage (la prise de profit automatique)
 
 On vend ce qui a monté et on rachète ce qui a baissé, mécaniquement.
 
 1. **Versements :** le cash disponible achète d'abord les lignes les plus en retard sur leur cible, sans jamais vendre. C'est le mécanisme principal.
-2. **Seuil :** le contrôle se fait chaque semaine. Une poche est rééquilibrée vers sa cible si elle sort de sa bande de tolérance, selon la règle « 5/25 » : bande = ± min(5 points, 25 % de la cible).
-   - Actions 75 % : bande ±5 points, donc entre 70 et 80 %.
-   - Crypto 15 % : bande ±3,75 points, donc entre 11,25 et 18,75 %. La crypto qui passe de 15 % à 25 % déclenche une vente jusqu'à 15 %.
-   - Matières premières 10 % : bande ±2,5 points.
+2. **Seuil :** le contrôle se fait chaque semaine. Une ligne est rééquilibrée vers sa cible si elle sort de sa bande de tolérance, selon la règle « 5/25 » : bande = ± min(5 points, 25 % de la cible).
+   - VWCE 55 % : bande ±5 points, donc entre 50 et 60 %.
+   - Chaque ligne choisie à 5 % : bande ±1,25 point, donc entre 3,75 et 6,25 %. Si MSTR ou SOL flambe et passe à 6,5 %, l'excédent est revendu jusqu'à 5 %.
+   - Total des choix personnels : jamais au-dessus de 40 % après rééquilibrage.
+   - Matières premières 5 % : bande ±1,25 point.
+   - Une vente de rééquilibrage plus petite que le montant minimum d'un ordre attend le passage suivant.
 3. **Annuel :** chaque premier lundi de janvier, rééquilibrage complet vers les cibles, sans tenir compte des bandes.
 4. **Ordre d'exécution :** les ventes d'abord, puis les achats.
 5. **Limite :** un seul rééquilibrage par seuil au maximum par semaine.
@@ -147,8 +164,9 @@ La logique de décision (`signals`, `allocation`, `rebalance`) est pure, sans au
 
 ## 12. Questions ouvertes
 
-1. Le compte IBKR a-t-il la permission crypto, ou faut-il passer par des ETP ?
-2. Dans quelle devise se font les dépôts : EUR, USD ou GEL ?
-3. Le rapport doit-il arriver par Telegram ou par e-mail ?
-4. Le code va-t-il dans un nouveau dépôt, ou dans ce dépôt ?
-5. Montant plancher du virement mensuel, à fixer une fois l'épargne de précaution constituée.
+1. Le compte IBKR a-t-il la permission crypto, ou faut-il passer par des ETP ? Pour HYPE, ETP à 2,5 %/an de frais ou compte sur un exchange ?
+2. 4e ligne crypto : 5 % de plus sur ETH, ou LINK ? 4e ligne action : TSMC, ou autre ?
+3. Dans quelle devise se font les dépôts : EUR, USD ou GEL ?
+4. Le rapport doit-il arriver par Telegram ou par e-mail ?
+5. Le code va-t-il dans un nouveau dépôt, ou dans ce dépôt ?
+6. Montant plancher du virement mensuel, à fixer une fois l'épargne de précaution constituée.

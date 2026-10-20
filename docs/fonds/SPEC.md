@@ -1,6 +1,6 @@
 # Fonds personnel autonome — Spécification de l'orchestrateur
 
-Statut : **brouillon à valider** · Version 0.2 · 2026-10-20
+Statut : **brouillon à valider** · Version 0.3 · 2026-10-20
 
 ## 1. Objectif
 
@@ -27,17 +27,17 @@ Répartition : 60 % de cœur diversifié, 40 % de choix personnels (20 % crypto,
 |---|---|---|---|---|
 | Cœur | Actions monde | 55 % | VWCE (Vanguard FTSE All-World Acc, Xetra, EUR) | Aucun |
 | Cœur | Matières premières | 5 % | IGLN (or), SSLN (argent), CMOD (panier Bloomberg Commodity) | Mensuel |
-| Choix crypto | Ether | 5 % | ETP Ether physique (Europe) | Hebdo |
-| Choix crypto | Solana | 5 % | ETP Solana physique (Europe) | Hebdo |
-| Choix crypto | Hyperliquid | 5 % | 21Shares Hyperliquid ETP (CH1471826029, SIX, frais 2,5 %/an) ou HYPE en direct sur un exchange | Hebdo |
-| Choix crypto | 4e ligne | 5 % | **À confirmer** : proposition = 5 % de plus sur ETH (donc ETH à 10 %), alternative = LINK | Hebdo |
+| Choix crypto | Ether | 10 % | ETP Ether physique coté Xetra | Hebdo |
+| Choix crypto | Solana | 5 % | ETP Solana physique coté Xetra | Hebdo |
+| Choix crypto | Hyperliquid | 5 % | 21Shares Hyperliquid ETP (CH1471826029, SIX, frais 2,5 %/an) | Hebdo |
 | Choix actions | Strategy (proxy Bitcoin à effet de levier) | 5 % | MSTR (Nasdaq, USD) | Hebdo, comme une crypto |
 | Choix actions | Xiaomi | 5 % | 1810 (HKEX, lots de 200 actions), ou ADR XIACY si disponible | Mensuel |
 | Choix actions | Écosystème Musk | 5 % | TSLA 2,5 % et SPCX (SpaceX) 2,5 % | Mensuel |
-| Choix actions | 4e ligne | 5 % | **À confirmer** : proposition = TSM (TSMC, ADR) | Mensuel |
+| Choix actions | TSMC | 5 % | TSM (ADR, NYSE, USD) | Mensuel |
 | Parking | — | reste | XEON (monétaire €STR) | — |
 
 - Tous les tickers et poids sont des paramètres de `config.yaml`. Aucun n'est codé en dur.
+- **Tout passe par IBKR**, avec une seule API. La crypto est détenue via des ETP cotés en bourse, ce qui ne demande pas la permission crypto IBKR. Seules les permissions actions sur Xetra, SIX, Nasdaq/NYSE et HKEX sont nécessaires.
 - **Plafond des choix personnels :** 40 % du portefeuille au total, et 8 % maximum par ligne avant rééquilibrage forcé.
 - **Changer une ligne choisie :** le changement est pris en compte au passage mensuel suivant, jamais immédiatement.
 - **Choix crypto éligibles :** top 50 par capitalisation, et un instrument liquide (ETP ou exchange) est disponible.
@@ -113,7 +113,7 @@ On vend ce qui a monté et on rachète ce qui a baissé, mécaniquement.
 
 ## 9. Rapport mensuel
 
-Le rapport est envoyé par Telegram ou par e-mail et contient :
+Le rapport est envoyé par Telegram, qui sert aussi pour les alertes et la commande `/stop`. Il contient :
 
 - valeur du portefeuille, versements du mois et versements cumulés ;
 - performance pondérée dans le temps (hors effet des versements) sur le mois, depuis janvier et depuis le début ;
@@ -160,13 +160,9 @@ La logique de décision (`signals`, `allocation`, `rebalance`) est pure, sans au
    - 2 mois sur le compte paper.
    - Critère pour passer en réel : aucune anomalie d'exécution, et des décisions identiques à celles du backtest sur la même période.
 3. **Phase 3 :** ajout de la poche crypto, selon le même processus (backtest, puis paper, puis réel).
-4. **Phase 4, en option :** carry de funding sur un exchange crypto pour le cash de la poche crypto quand elle est en OFF.
 
 ## 12. Questions ouvertes
 
-1. Le compte IBKR a-t-il la permission crypto, ou faut-il passer par des ETP ? Pour HYPE, ETP à 2,5 %/an de frais ou compte sur un exchange ?
-2. 4e ligne crypto : 5 % de plus sur ETH, ou LINK ? 4e ligne action : TSMC, ou autre ?
-3. Dans quelle devise se font les dépôts : EUR, USD ou GEL ?
-4. Le rapport doit-il arriver par Telegram ou par e-mail ?
-5. Le code va-t-il dans un nouveau dépôt, ou dans ce dépôt ?
-6. Montant plancher du virement mensuel, à fixer une fois l'épargne de précaution constituée.
+1. Dans quelle devise se font les dépôts : EUR, USD ou GEL ?
+2. Le code va-t-il dans un nouveau dépôt, ou dans ce dépôt ?
+3. Montant plancher du virement mensuel, à fixer une fois l'épargne de précaution constituée.

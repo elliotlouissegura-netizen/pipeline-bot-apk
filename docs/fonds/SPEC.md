@@ -44,7 +44,7 @@ Répartition : 60 % de cœur diversifié, 40 % de choix personnels (20 % crypto,
 
 ## 3. Signaux de tendance
 
-On vend parce que la hausse s'arrête, jamais parce qu'elle « a assez monté ».
+On vend parce que la hausse s'arrête, jamais parce qu'elle « a assez monté ». **Règle validée le 2026-10-20 pour toutes les lignes choisies et les matières premières.**
 
 | Actif | Fréquence d'évaluation | Signal ON | Signal OFF |
 |---|---|---|---|
